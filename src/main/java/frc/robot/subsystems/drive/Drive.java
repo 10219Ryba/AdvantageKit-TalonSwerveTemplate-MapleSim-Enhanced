@@ -120,7 +120,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
                 new SwerveModulePosition(),
                 new SwerveModulePosition()
             };
-    private final SwerveDrivePoseEstimator poseEstimator =
+    public final SwerveDrivePoseEstimator poseEstimator =
             new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
 
     private final Consumer<Pose2d> resetSimulationPoseCallBack;
@@ -223,7 +223,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
         }
 
         // Update gyro alert
-        gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
+        gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.getMode() != Mode.SIM);
     }
 
     /**
@@ -306,7 +306,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
     /** Returns the measured chassis speeds of the robot. */
     @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
-    private ChassisSpeeds getChassisSpeeds() {
+    public ChassisSpeeds getChassisSpeeds() {
         return kinematics.toChassisSpeeds(getModuleStates());
     }
 

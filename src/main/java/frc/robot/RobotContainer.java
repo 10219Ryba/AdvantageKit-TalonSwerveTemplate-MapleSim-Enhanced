@@ -58,7 +58,7 @@ public class RobotContainer {
 
     /** The container for the robot. Contains subsystems, OI devices, and commands. */
     public RobotContainer() {
-        switch (Constants.currentMode) {
+        switch (Constants.getMode()) {
             case REAL:
                 // Real robot, instantiate hardware IO implementations
                 drive = new Drive(
@@ -150,16 +150,16 @@ public class RobotContainer {
         controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
 
         // Reset gyro / odometry
-        final Runnable resetGyro = Constants.currentMode == Constants.Mode.SIM
-                ? () -> drive.setPose(
-                        driveSimulation.getSimulatedDriveTrainPose()) // reset odometry to actual robot pose during
-                // simulation
-                : () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), new Rotation2d())); // zero gyro
-        controller.start().onTrue(Commands.runOnce(resetGyro, drive).ignoringDisable(true));
+        // final Runnable resetGyro = Constants.getMode() == Constants.Mode.SIM
+        //         ? () -> drive.setPose(
+        //                 driveSimulation.getSimulatedDriveTrainPose()) // reset odometry to actual robot pose during
+        //         // simulation
+        //         : () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), new Rotation2d())); // zero gyro
+        // controller.start().onTrue(Commands.runOnce(resetGyro, drive).ignoringDisable(true));
 
         // Example Coral Placement Code
         // TODO: delete these code for your own project
-        if (Constants.currentMode == Constants.Mode.SIM) {
+        if (Constants.getMode() == Constants.Mode.SIM) {
             // L4 placement
             controller.y().onTrue(Commands.runOnce(() -> SimulatedArena.getInstance()
                     .addGamePieceProjectile(new ReefscapeCoralOnFly(
@@ -193,14 +193,14 @@ public class RobotContainer {
     }
 
     public void resetSimulationField() {
-        if (Constants.currentMode != Constants.Mode.SIM) return;
+        if (Constants.getMode() != Constants.Mode.SIM) return;
 
         driveSimulation.setSimulationWorldPose(new Pose2d(3, 3, new Rotation2d()));
         SimulatedArena.getInstance().resetFieldForAuto();
     }
 
     public void updateSimulation() {
-        if (Constants.currentMode != Constants.Mode.SIM) return;
+        if (Constants.getMode() != Constants.Mode.SIM) return;
 
         SimulatedArena.getInstance().simulationPeriodic();
         Logger.recordOutput("FieldSimulation/RobotPosition", driveSimulation.getSimulatedDriveTrainPose());
