@@ -48,9 +48,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
+import frc.robot.RobotState;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.LocalADStarAK;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -94,13 +96,13 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
             .withGyro(COTS.ofPigeon2())
             .withSwerveModule(new SwerveModuleSimulationConfig(
                     DCMotor.getKrakenX60(1),
-                    DCMotor.getFalcon500(1),
+                    DCMotor.getKrakenX60(1),
                     TunerConstants.FrontLeft.DriveMotorGearRatio,
                     TunerConstants.FrontLeft.SteerMotorGearRatio,
-                    Volts.of(TunerConstants.FrontLeft.DriveFrictionVoltage),
-                    Volts.of(TunerConstants.FrontLeft.SteerFrictionVoltage),
+                    Volts.of(0.3),
+                    Volts.of(0.5),
                     Meters.of(TunerConstants.FrontLeft.WheelRadius),
-                    KilogramSquareMeters.of(TunerConstants.FrontLeft.SteerInertia),
+                    KilogramSquareMeters.of(0.05),
                     WHEEL_COF));
 
     static final Lock odometryLock = new ReentrantLock();
@@ -207,6 +209,10 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
                         modulePositions[moduleIndex].angle);
                 lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
             }
+
+            RobotState.getInstance()
+                    .addOdometryObservation(new RobotState.OdometryObservation(
+                            modulePositions, Optional.of(rawGyroRotation), sampleTimestamps[i]));
 
             // Update gyro angle
             if (gyroInputs.connected) {
