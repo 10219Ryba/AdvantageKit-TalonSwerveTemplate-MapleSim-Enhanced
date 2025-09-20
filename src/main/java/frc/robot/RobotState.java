@@ -79,11 +79,11 @@ public class RobotState {
     }
 
     @Getter
-    @AutoLogOutput(key = "RobotState/OdometryPose")
+    @AutoLogOutput
     private Pose2d odometryPose = Pose2d.kZero;
 
     @Getter
-    @AutoLogOutput(key = "RobotState/EstimatedPose")
+    @AutoLogOutput
     private Pose2d estimatedPose = Pose2d.kZero;
 
     private final TimeInterpolatableBuffer<Pose2d> poseBuffer =
