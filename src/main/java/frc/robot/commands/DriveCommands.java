@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.RobotState;
 import frc.robot.subsystems.drive.Drive;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -87,7 +88,9 @@ public class DriveCommands {
                             && DriverStation.getAlliance().get() == Alliance.Red;
                     drive.runVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
                             speeds,
-                            isFlipped ? drive.getRotation().plus(new Rotation2d(Math.PI)) : drive.getRotation()));
+                            isFlipped
+                                    ? RobotState.getInstance().getRotation().plus(new Rotation2d(Math.PI))
+                                    : RobotState.getInstance().getRotation()));
                 },
                 drive);
     }
@@ -126,8 +129,10 @@ public class DriveCommands {
                             drive.runVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
                                     speeds,
                                     isFlipped
-                                            ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                                            : drive.getRotation()));
+                                            ? RobotState.getInstance()
+                                                    .getRotation()
+                                                    .plus(new Rotation2d(Math.PI))
+                                            : RobotState.getInstance().getRotation()));
                         },
                         drive)
 
