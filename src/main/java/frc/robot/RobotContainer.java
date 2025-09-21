@@ -19,17 +19,18 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoTest;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.DriveToPose;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.vision.*;
 import frc.robot.util.AllianceFlipUtil;
-
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
@@ -55,7 +56,9 @@ public class RobotContainer {
 
     /** The container for the robot. Contains subsystems, OI devices, and commands. */
     public RobotContainer() {
-        switch (Constants.getMode()) {
+        DriverStation.silenceJoystickConnectionWarning(true);
+
+        switch (Constants.currentMode) {
             case REAL:
                 // Real robot, instantiate hardware IO implementations
                 drive = new Drive(
@@ -119,7 +122,6 @@ public class RobotContainer {
                 "Drive SysId (Quasistatic Reverse)", drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
         autoChooser.addOption("Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
         autoChooser.addOption("Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-        autoChooser.addOption("Test", autoTest.testSomewhere());
 
         // Configure the button bindings
         configureButtonBindings();
@@ -128,13 +130,10 @@ public class RobotContainer {
     private void configureButtonBindings() {
         // Default command, normal field-relative drive
         drive.setDefaultCommand(DriveCommands.joystickDrive(
-                drive, () -> -controller.getLeftY(), () -> -controller.getLeftX(), () -> -controller.getRightX()));
-
-        // Lock to 0° when A button is held
-        controller
-                .a()
-                .whileTrue(DriveCommands.joystickDriveAtAngle(
-                        drive, () -> -controller.getLeftY(), () -> -controller.getLeftX(), () -> new Rotation2d()));
+                drive,
+                () -> AllianceFlipUtil.shouldFlip() ? controller.getLeftY() : -controller.getLeftY(),
+                () -> AllianceFlipUtil.shouldFlip() ? controller.getLeftX() : -controller.getLeftX(),
+                () -> -controller.getRightX()));
 
         // Switch to X pattern when X button is pressed
         controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
@@ -144,8 +143,21 @@ public class RobotContainer {
                 ? () -> drive.setPose(
                         driveSimulation.getSimulatedDriveTrainPose()) // reset odometry to actual robot pose during
                 // simulation
-                : () -> RobotState.getInstance().resetPose(new Pose2d(RobotState.getInstance().getEstimatedPose().getTranslation(), AllianceFlipUtil.apply(new Rotation2d()))); // zero gyro
+                : () -> RobotState.getInstance()
+                        .resetPose(new Pose2d(
+                                RobotState.getInstance().getEstimatedPose().getTranslation(),
+                                AllianceFlipUtil.apply(Rotation2d.kZero))); // zero gyro
+
         controller.start().onTrue(Commands.runOnce(resetGyro, drive).ignoringDisable(true));
+
+        controller
+                .y()
+                .onTrue(new DriveToPose(
+                        drive,
+                        () -> new Pose2d(
+                                FieldConstants.Barge.middleCage.getX(),
+                                FieldConstants.Barge.middleCage.getY(),
+                                new Rotation2d())));
     }
 
     public Command getAutonomousCommand() {
@@ -153,14 +165,15 @@ public class RobotContainer {
     }
 
     public void resetSimulationField() {
-        if (Constants.getMode() != Constants.Mode.SIM) return;
+        if (Constants.currentMode != Constants.Mode.SIM) return;
 
-        driveSimulation.setSimulationWorldPose(new Pose2d(FieldConstants.startingLineX, 3, new Rotation2d()));
+        driveSimulation.setSimulationWorldPose(
+                new Pose2d(FieldConstants.startingLineX, FieldConstants.fieldWidth / 2.0, new Rotation2d(Math.PI)));
         SimulatedArena.getInstance().resetFieldForAuto();
     }
 
     public void updateSimulation() {
-        if (Constants.getMode() != Constants.Mode.SIM) return;
+        if (Constants.currentMode != Constants.Mode.SIM) return;
 
         SimulatedArena.getInstance().simulationPeriodic();
         Logger.recordOutput("FieldSimulation/RobotPosition", driveSimulation.getSimulatedDriveTrainPose());

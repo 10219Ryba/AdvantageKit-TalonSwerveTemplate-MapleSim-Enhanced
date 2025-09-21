@@ -136,7 +136,7 @@ public class RobotState {
     public void addOdometryObservation(OdometryObservation observation) {
         Twist2d twist = kinematics.toTwist2d(lastWheelPositions, observation.wheelPositions);
         lastWheelPositions = observation.wheelPositions;
-        Pose2d lastOdomteryPose = odometryPose;
+        Pose2d lastOdometry = odometryPose;
         odometryPose = odometryPose.exp(twist);
 
         observation.gyroAngle.ifPresent(gyroAngle -> {
@@ -146,7 +146,7 @@ public class RobotState {
 
         poseBuffer.addSample(observation.timestamp(), odometryPose);
 
-        Twist2d finalTwist = lastOdomteryPose.log(odometryPose);
+        Twist2d finalTwist = lastOdometry.log(odometryPose);
         estimatedPose = estimatedPose.exp(finalTwist);
     }
 
@@ -266,7 +266,7 @@ public class RobotState {
 
     @AutoLogOutput(key = "RobotState/FieldVelocity")
     public ChassisSpeeds getFieldVelocity() {
-        return ChassisSpeeds.fromFieldRelativeSpeeds(robotVelocity, getRotation());
+        return ChassisSpeeds.fromRobotRelativeSpeeds(robotVelocity, getRotation());
     }
 
     public Rotation2d getRotation() {

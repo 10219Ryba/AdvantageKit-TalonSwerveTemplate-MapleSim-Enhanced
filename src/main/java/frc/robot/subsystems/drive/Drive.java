@@ -212,7 +212,11 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
             RobotState.getInstance()
                     .addOdometryObservation(new RobotState.OdometryObservation(
-                            modulePositions, Optional.of(rawGyroRotation), sampleTimestamps[i]));
+                            modulePositions,
+                            Optional.ofNullable(gyroInputs.connected ? gyroInputs.odometryYawPositions[i] : null),
+                            sampleTimestamps[i]));
+
+            RobotState.getInstance().addDriveSpeeds(getChassisSpeeds());
 
             // Update gyro angle
             if (gyroInputs.connected) {
@@ -229,7 +233,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
         }
 
         // Update gyro alert
-        gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.getMode() != Mode.SIM);
+        gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
     }
 
     /**
@@ -355,6 +359,9 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
     @Override
     public void accept(Pose2d visionRobotPoseMeters, double timestampSeconds, Matrix<N3, N1> visionMeasurementStdDevs) {
         poseEstimator.addVisionMeasurement(visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs);
+        RobotState.getInstance()
+                .addVisionObservation(new RobotState.VisionObservation(
+                        visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs));
     }
 
     /** Returns the maximum linear speed in meters per sec. */
